@@ -1,37 +1,66 @@
-import { StyleSheet } from "react-native";
+import { useQuery } from "@tanstack/react-query";
+import {
+  ActivityIndicator,
+  FlatList,
+  ListRenderItem,
+  StyleSheet,
+  TouchableOpacity,
+} from "react-native";
 
+import { Todo, getTodos } from "../../api/todo";
 import { Text, View } from "../../components/Themed";
-import { useEffect } from "react";
-import { getTodos } from "../../api/todo";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function TabOneScreen() {
-  useEffect(() => {
-    console.log("TabOneScreen");
-    getTodos().then((res) => {
-      console.log(res.data);
-    });
-  }, []);
+  const todosQuery = useQuery({
+    queryKey: ["todos"],
+    queryFn: getTodos,
+  });
+
+  const renderTodo: ListRenderItem<Todo> = ({ item }) => {
+    return (
+      <View style={styles.todoContainer}>
+        <TouchableOpacity onPress={() => {}}>
+          {item.done && (
+            <Ionicons name="checkmark-circle" size={24} color="green" />
+          )}
+          {!item.done && (
+            <Ionicons name="checkmark-circle-outline" size={24} color="black" />
+          )}
+          <Text>{item.text}</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
 
   return (
     <View style={styles.container}>
-      <Text>This is the first tab!</Text>
+      {todosQuery.isLoading ? <ActivityIndicator size="large" /> : null}
+      {todosQuery.isError ? <Text>Couldn't load todos</Text> : null}
+      <FlatList
+        data={todosQuery.data}
+        renderItem={({ item }) => <Text>{item.text}</Text>}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    paddingHorizontal: 20,
     flex: 1,
     alignItems: "center",
-    justifyContent: "center",
   },
   title: {
     fontSize: 20,
     fontWeight: "bold",
   },
-  separator: {
-    marginVertical: 30,
-    height: 1,
-    width: "80%",
+  todoContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 10,
+    gap: 10,
+    marginVertical: 4,
+    backgroundColor: "#fff",
   },
 });
