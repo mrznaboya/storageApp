@@ -1,6 +1,24 @@
 {
   "todos": [
-    { "id": "1", "text": "first todo", "done": false },
-    { "id": "2", "text": "second todo", "done": false }
+    {
+      "id": "1",
+      "text": "first todo",
+      "done": true
+    },
+    {
+      "id": "2",
+      "text": "second todo",
+      "done": true
+    },
+    {
+      "id": "90dc",
+      "text": "Test",
+      "done": true
+    },
+    {
+      "id": "dfdd",
+      "text": "Test2",
+      "done": false
+    }
   ]
 }

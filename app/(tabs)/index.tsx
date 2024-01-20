@@ -1,26 +1,94 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Button,
   FlatList,
   ListRenderItem,
   StyleSheet,
+  Text,
+  TextInput,
   TouchableOpacity,
+  View,
 } from "react-native";
+import Reactotron from "reactotron-react-native";
 
-import { Todo, getTodos } from "../../api/todo";
-import { Text, View } from "../../components/Themed";
+import {
+  Todo,
+  createTodo,
+  deleteTodo,
+  getTodoById,
+  getTodos,
+  updateTodo,
+} from "@/api/todo";
 
 const TabOneScreen = () => {
+  const [todo, setTodo] = useState("");
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    Reactotron.log("ZUY WAS HERE");
+
+    queryClient.prefetchQuery({
+      queryKey: ["todos", 2],
+      queryFn: () => getTodoById(2),
+    });
+  }, []);
+
   const todosQuery = useQuery({
     queryKey: ["todos"],
     queryFn: getTodos,
   });
 
-  const renderTodo: ListRenderItem<Todo> = ({ item }) => {
-    const deleteTodo = () => {};
+  const addMutation = useMutation({
+    mutationFn: createTodo,
+    onSuccess: (data) => {
+      console.log("success: ", data);
+      queryClient.invalidateQueries({
+        queryKey: ["todos"],
+      });
+    },
+  });
 
-    const toggleDone = () => {};
+  const deleteMutation = useMutation({
+    mutationFn: deleteTodo,
+    onSuccess: (data) => {
+      console.log("success: ", data);
+      queryClient.invalidateQueries({
+        queryKey: ["todos"],
+      });
+    },
+  });
+
+  const updateQueryClient = (updatedTodo: Todo) => {
+    queryClient.setQueryData(["todos"], (data: any) => {
+      return data.map((todo: Todo) =>
+        todo.id === updatedTodo.id ? updatedTodo : todo
+      );
+    });
+  };
+
+  const updateMutation = useMutation({
+    mutationFn: updateTodo,
+    onSuccess: updateQueryClient,
+  });
+
+  const addTodo = () => {
+    addMutation.mutate(todo);
+  };
+
+  const renderTodo: ListRenderItem<Todo> = ({ item }) => {
+    const deleteTodo = () => {
+      deleteMutation.mutate(item.id);
+    };
+
+    const toggleDone = () => {
+      updateMutation.mutate({
+        ...item,
+        done: !item.done,
+      });
+    };
 
     return (
       <View style={styles.todoContainer}>
@@ -45,6 +113,15 @@ const TabOneScreen = () => {
 
   return (
     <View style={styles.container}>
+      <View style={styles.form}>
+        <TextInput
+          placeholder="Add todo"
+          value={todo}
+          onChangeText={setTodo}
+          style={styles.input}
+        />
+        <Button title="Add" onPress={addTodo} />
+      </View>
       {todosQuery.isLoading ? <ActivityIndicator size="large" /> : null}
       {todosQuery.isError ? <Text>Couldn't load todos</Text> : null}
       <FlatList
@@ -84,5 +161,19 @@ const styles = StyleSheet.create({
   todoText: {
     flex: 1,
     paddingHorizontal: 10,
+  },
+  form: {
+    flexDirection: "row",
+    marginVertical: 20,
+    alignItems: "center",
+  },
+  input: {
+    flex: 1,
+    height: 40,
+    borderWidth: 1,
+    borderRadius: 4,
+    borderColor: "#ccc",
+    padding: 10,
+    backgroundColor: "#fff",
   },
 });
